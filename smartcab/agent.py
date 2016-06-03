@@ -123,22 +123,28 @@ class QLearningAgent(Agent):
         self.planner.route_to(destination)
         
     def update(self, t):
-        self.next_waypoint = self.planner.next_waypoint()
-        
+        # Gather inputs
+        self.next_waypoint = self.planner.next_waypoint()  # from route planner, also displayed by simulator        
         inputs = self.env.sense(self)
         inputs = inputs.items()
         deadline = self.env.get_deadline(self)
         
+        # Take the inputs by whether the light is green/red, oncoming or not,
+        # and where the next waypoint its going.
         self.state = (inputs[0], inputs[1], inputs[3], self.next_waypoint)
         
+        # Use the Q value to move correctly
         action = self.ai.Q_move(self.state)
         
+        # Attribute the awards by the action
         reward = self.env.act(self, action)
         
-        inputs2 = self.env.sense(self)
-        inputs2 = inputs2.items()
+        # Update the inputs based on the Q result
+        inputs_next = self.env.sense(self)
+        inputs_next = inputs_next.items()
         
-        next_state = (inputs2[0], inputs2[1], inputs[3], self.next_waypoint)
+        # Go into the next move based on Q values.
+        next_state = (inputs_next[0], inputs_next[1], inputs[3], self.next_waypoint)
         
         self.ai.Q_post(self.state, action, next_state, reward)
         
