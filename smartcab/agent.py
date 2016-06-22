@@ -51,12 +51,13 @@ class Qlearn(Agent):
       gamma = memory and discount of the max Q.
     """
     
-    def __init__(self, epsilon = 1, alpha = 1, gamma =1):
+    def __init__(self, state=None, epsilon = 1, alpha = 1, gamma =1):
         self.Q = QChart()
         self.epsilon = epsilon
         self.alpha = alpha
         self.gamma = gamma
         self.possible_actions = Environment.valid_actions
+        self.state = state
         
     def Q_move(self, state):
         """ With the given state, provide the best actions to go.
@@ -82,8 +83,6 @@ class Qlearn(Agent):
         q = self.Q.get(state, action)
         if q is None:
             q = reward
-        else:
-            q+= self.alpha * new_q
         self.Q.set(state,action,q)
     
     def Q_post(self, state, action, next_state, reward):
@@ -95,14 +94,24 @@ class Qlearn(Agent):
           next_state: next state it goes into.
           reward: rewards it has received.
         """
-        
         q_value = [self.Q.get(next_state,a) for a in self.possible_actions]
-        future_rewards = max(q_value)
-        if future_rewards is None:
-            future_rewards  = 0.0
-        self.Q_learn(state,action,reward, reward - self.gamma * future_rewards)
+ 
+        # max q!
+        if max(q_value) is None:
+            max_q = 0
+        else:
+            max_q = max(q_value)
+        
+        if self.Q.get(state,action) is None:
+            cur_q = 0
+        else:
+            cur_q = self.Q.get(state,action)
+        
+        new_q = new_q = ((1.0 - self.alpha) * cur_q) + (self.alpha * reward)
+        self.Q_learn(state,action,reward, new_q)
         self.Q.report()
-    
+        
+
 class QLearningAgent(Agent):
     """ An Agent that is learned to drive based on the Q-Learning
         techniques
@@ -117,7 +126,7 @@ class QLearningAgent(Agent):
         self.color = 'black'
         self.planner = RoutePlanner(self.env, self)
         self.possible_actions = Environment.valid_actions
-        self.ai = Qlearn(epsilon=0.05, alpha=0.1, gamma=0.9)
+        self.ai = Qlearn(epsilon=0.25, alpha=0.5, gamma=0.5)
     
     def reset(self, destination=None):
         self.planner.route_to(destination)
@@ -129,8 +138,8 @@ class QLearningAgent(Agent):
         inputs = inputs.items()
         deadline = self.env.get_deadline(self)
         
-        # Take the inputs by whether the light is green/red, oncoming or not,
-        # and where the next waypoint its going.
+        # Take the inputs by whether the light is green/red, oncoming vejoc;e
+        # from the left or right, and where the next waypoint its going.
         self.state = (inputs[0], inputs[1], inputs[3], self.next_waypoint)
         
         # Use the Q value to move correctly
@@ -151,15 +160,18 @@ class QLearningAgent(Agent):
         print "LearningAgent.update(): deadline = {}, inputs = {}, action = {}, reward = {}".format(deadline, inputs, action, reward)
     
 def run():
-    """ Run teh agent in a finite of trials"""
+    """ Run the agent in a finite of trials"""
     
     e = Environment()
     a = e.create_agent(QLearningAgent)
     e.set_primary_agent(a,enforce_deadline=True)
     
-    sim = Simulator(e, update_delay=0.001)
-    
-    sim.run(n_trials=1)
+    sim = Simulator(e, update_delay=0.00001)
+    #TODO Write a test for the best tuning...
+    i = 0
+    while i < 4:
+        sim.run(n_trials=1)
+        i +=1
 
 if __name__ == '__main__':
     run()
