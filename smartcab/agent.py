@@ -126,7 +126,7 @@ class QLearningAgent(Agent):
         self.color = 'black'
         self.planner = RoutePlanner(self.env, self)
         self.possible_actions = Environment.valid_actions
-        self.ai = Qlearn(epsilon=0.25, alpha=0.5, gamma=0.5)
+        self.ai = Qlearn(alpha=1, gamma=0.25, epsilon=0.25)
     
     def reset(self, destination=None):
         self.planner.route_to(destination)
@@ -166,12 +166,9 @@ def run():
     a = e.create_agent(QLearningAgent)
     e.set_primary_agent(a,enforce_deadline=True)
     
-    sim = Simulator(e, update_delay=0.00001)
+    sim = Simulator(e, update_delay=0.001)
     #TODO Write a test for the best tuning...
-    i = 0
-    while i < 4:
-        sim.run(n_trials=1)
-        i +=1
+    sim.run(n_trials=3)
 
 if __name__ == '__main__':
     run()
